@@ -1,0 +1,6 @@
+{
+  "name": "Zest",
+  "description": "Gamified daily habit and wellness ritual tracker with tactile milestones, streaks, and weekly recaps.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,365 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidDateKey(key) {
+      return key is string && key.size() == 10 && key.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function hasValidParentUser(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) &&
+        get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'displayName', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid == request.auth.uid && data.uid == userId &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 254 &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 120)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidHabit(data, habitId) {
+      return data.keys().hasAll([
+          'ownerId', 'id', 'title', 'category', 'timeOfDay',
+          'durationMinutes', 'cadence', 'xpReward', 'icon',
+          'archived', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'id', 'title', 'category', 'timeOfDay',
+          'durationMinutes', 'cadence', 'xpReward', 'icon',
+          'archived', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId == request.auth.uid &&
+        isValidId(data.id) && data.id == habitId &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 60 &&
+        data.category in ['Wellness', 'Mindfulness', 'Movement', 'Focus'] &&
+        data.timeOfDay in ['Morning', 'Afternoon', 'Evening', 'Anytime'] &&
+        data.durationMinutes is int && data.durationMinutes >= 1 && data.durationMinutes <= 240 &&
+        data.cadence in ['Daily', 'Weekdays', '3x / week'] &&
+        data.xpReward is int && data.xpReward >= 5 && data.xpReward <= 500 &&
+        data.icon is string && data.icon.size() >= 1 && data.icon.size() <= 32 &&
+        data.archived is bool &&
+        isValidDateKey(data.createdAt) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCompletionDay(data, dateKey) {
+      return data.keys().hasAll(['ownerId', 'dateKey', 'habitIds', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'dateKey', 'habitIds', 'updatedAt']) &&
+        data.ownerId is string && data.ownerId == request.auth.uid &&
+        isValidDateKey(data.dateKey) && data.dateKey == dateKey &&
+        data.habitIds is list && data.habitIds.size() <= 50 &&
+        (data.habitIds.size() == 0 || (data.habitIds[0] is string && data.habitIds[0].size() <= 128)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidJournalEntry(data) {
+      return data.keys().hasAll(['ownerId', 'dateKey', 'transcript', 'source', 'createdAt']) &&
+        data.keys().hasOnly(['ownerId', 'dateKey', 'transcript', 'source', 'createdAt']) &&
+        data.ownerId is string && data.ownerId == request.auth.uid &&
+        isValidDateKey(data.dateKey) &&
+        data.transcript is string && data.transcript.size() >= 1 && data.transcript.size() <= 4000 &&
+        data.source in ['voice', 'text'] &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidPlannerTask(data, taskId) {
+      return data.keys().hasAll([
+          'ownerId', 'id', 'title', 'dateKey', 'startMinutes', 'endMinutes',
+          'durationMinutes', 'priority', 'category', 'notes', 'completed',
+          'isEvent', 'source', 'googleEventId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'id', 'title', 'dateKey', 'startMinutes', 'endMinutes',
+          'durationMinutes', 'priority', 'category', 'notes', 'completed',
+          'isEvent', 'source', 'googleEventId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId == request.auth.uid &&
+        isValidId(data.id) && data.id == taskId &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 120 &&
+        isValidDateKey(data.dateKey) &&
+        (data.startMinutes == null || (data.startMinutes is int && data.startMinutes >= 0 && data.startMinutes <= 1440)) &&
+        (data.endMinutes == null || (data.endMinutes is int && data.endMinutes >= 0 && data.endMinutes <= 1440)) &&
+        data.durationMinutes is int && data.durationMinutes >= 15 && data.durationMinutes <= 480 &&
+        data.priority in ['High', 'Medium', 'Low'] &&
+        data.category in ['Wellness', 'Mindfulness', 'Movement', 'Focus', 'General'] &&
+        data.notes is string && data.notes.size() <= 1000 &&
+        data.completed is bool &&
+        data.isEvent is bool &&
+        data.source in ['zest', 'google'] &&
+        (data.googleEventId == null || (data.googleEventId is string && data.googleEventId.size() <= 256)) &&
+        isValidDateKey(data.createdAt) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTimeBlock(data, blockId) {
+      return data.keys().hasAll([
+          'ownerId', 'id', 'dateKey', 'title', 'category',
+          'startMinutes', 'endMinutes', 'habitId', 'taskId',
+          'source', 'googleEventId', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'id', 'dateKey', 'title', 'category',
+          'startMinutes', 'endMinutes', 'habitId', 'taskId',
+          'source', 'googleEventId', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId == request.auth.uid &&
+        isValidId(data.id) && data.id == blockId &&
+        isValidDateKey(data.dateKey) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 120 &&
+        data.category in ['Wellness', 'Mindfulness', 'Movement', 'Focus', 'General'] &&
+        data.startMinutes is int && data.startMinutes >= 0 && data.startMinutes <= 1425 &&
+        data.endMinutes is int && data.endMinutes > data.startMinutes && data.endMinutes <= 1440 &&
+        (data.habitId == null || isValidId(data.habitId)) &&
+        (data.taskId == null || isValidId(data.taskId)) &&
+        data.source in ['zest', 'google'] &&
+        (data.googleEventId == null || (data.googleEventId is string && data.googleEventId.size() <= 256)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCalendarSync(data) {
+      return data.keys().hasAll([
+          'ownerId', 'connected', 'lastSyncedAt', 'syncedCount', 'calendarEmail', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'connected', 'lastSyncedAt', 'syncedCount', 'calendarEmail', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId == request.auth.uid &&
+        data.connected is bool &&
+        (data.lastSyncedAt == null || (data.lastSyncedAt is string && data.lastSyncedAt.size() <= 64)) &&
+        data.syncedCount is int && data.syncedCount >= 0 && data.syncedCount <= 500 &&
+        (data.calendarEmail == null || (data.calendarEmail is string && data.calendarEmail.size() <= 254)) &&
+        data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isVerified() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt']) &&
+        incoming().uid == existing().uid &&
+        incoming().email == existing().email &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+      allow delete: if false;
+
+      match /habits/{habitId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(habitId) && isOwner(userId);
+        allow list: if isSignedIn() && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(habitId) &&
+          isOwner(userId) &&
+          isValidHabit(incoming(), habitId) &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow update: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(habitId) &&
+          isOwner(userId) &&
+          isValidHabit(incoming(), habitId) &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'title', 'category', 'timeOfDay', 'durationMinutes', 'cadence',
+              'xpReward', 'icon', 'archived', 'updatedAt'
+            ]) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['archived', 'updatedAt'])
+          ) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().id == existing().id &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow delete: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(habitId) &&
+          isOwner(userId) &&
+          hasValidParentUser(userId);
+      }
+
+      match /completions/{dateKey} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidDateKey(dateKey) && isOwner(userId);
+        allow list: if isSignedIn() && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerified() &&
+          isValidId(userId) &&
+          isValidDateKey(dateKey) &&
+          isOwner(userId) &&
+          isValidCompletionDay(incoming(), dateKey) &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow update: if isVerified() &&
+          isValidId(userId) &&
+          isValidDateKey(dateKey) &&
+          isOwner(userId) &&
+          isValidCompletionDay(incoming(), dateKey) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['habitIds', 'updatedAt']) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().dateKey == existing().dateKey &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow delete: if isVerified() &&
+          isValidId(userId) &&
+          isValidDateKey(dateKey) &&
+          isOwner(userId) &&
+          hasValidParentUser(userId);
+      }
+
+      match /journalEntries/{entryId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(entryId) && isOwner(userId);
+        allow list: if isSignedIn() && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(entryId) &&
+          isOwner(userId) &&
+          isValidJournalEntry(incoming()) &&
+          incoming().createdAt == request.time &&
+          hasValidParentUser(userId);
+        allow update: if false;
+        allow delete: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(entryId) &&
+          isOwner(userId) &&
+          hasValidParentUser(userId);
+      }
+
+      match /tasks/{taskId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(taskId) && isOwner(userId);
+        allow list: if isSignedIn() && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(taskId) &&
+          isOwner(userId) &&
+          isValidPlannerTask(incoming(), taskId) &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow update: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(taskId) &&
+          isOwner(userId) &&
+          isValidPlannerTask(incoming(), taskId) &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'title', 'dateKey', 'startMinutes', 'endMinutes', 'durationMinutes',
+              'priority', 'category', 'notes', 'completed', 'isEvent',
+              'googleEventId', 'updatedAt'
+            ]) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt'])
+          ) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().id == existing().id &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow delete: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(taskId) &&
+          isOwner(userId) &&
+          hasValidParentUser(userId);
+      }
+
+      match /timeBlocks/{blockId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(blockId) && isOwner(userId);
+        allow list: if isSignedIn() && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(blockId) &&
+          isOwner(userId) &&
+          isValidTimeBlock(incoming(), blockId) &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow update: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(blockId) &&
+          isOwner(userId) &&
+          isValidTimeBlock(incoming(), blockId) &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'dateKey', 'title', 'category', 'startMinutes', 'endMinutes',
+              'habitId', 'taskId', 'googleEventId', 'updatedAt'
+            ]) ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'startMinutes', 'endMinutes', 'updatedAt'
+            ])
+          ) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().id == existing().id &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow delete: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(blockId) &&
+          isOwner(userId) &&
+          hasValidParentUser(userId);
+      }
+
+      match /syncState/{syncId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(syncId) && isOwner(userId);
+        allow list: if isSignedIn() && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(syncId) &&
+          isOwner(userId) &&
+          isValidCalendarSync(incoming()) &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow update: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(syncId) &&
+          isOwner(userId) &&
+          isValidCalendarSync(incoming()) &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'connected', 'lastSyncedAt', 'syncedCount', 'calendarEmail', 'updatedAt'
+          ]) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+        allow delete: if isVerified() &&
+          isValidId(userId) &&
+          isValidId(syncId) &&
+          isOwner(userId) &&
+          hasValidParentUser(userId);
+      }
+    }
+  }
+}

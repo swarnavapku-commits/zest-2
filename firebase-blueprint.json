@@ -1,0 +1,398 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated Zest user profile storing account identity and metadata.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "createdAt", "updatedAt"]
+    },
+    "HabitDoc": {
+      "title": "HabitDoc",
+      "description": "User-owned daily wellness ritual stored under the user's habits subcollection.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Wellness", "Mindfulness", "Movement", "Focus"]
+        },
+        "timeOfDay": {
+          "type": "string",
+          "enum": ["Morning", "Afternoon", "Evening", "Anytime"]
+        },
+        "durationMinutes": {
+          "type": "integer"
+        },
+        "cadence": {
+          "type": "string",
+          "enum": ["Daily", "Weekdays", "3x / week"]
+        },
+        "xpReward": {
+          "type": "integer"
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "id",
+        "title",
+        "category",
+        "timeOfDay",
+        "durationMinutes",
+        "cadence",
+        "xpReward",
+        "icon",
+        "archived",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CompletionDayDoc": {
+      "title": "CompletionDayDoc",
+      "description": "Daily completed habit ID list for a single calendar date (YYYY-MM-DD).",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "dateKey": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "habitIds": {
+          "type": "array"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "dateKey", "habitIds", "updatedAt"]
+    },
+    "JournalEntryDoc": {
+      "title": "JournalEntryDoc",
+      "description": "Voice-transcribed or written wellness journal entry owned by a user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "dateKey": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "transcript": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "source": {
+          "type": "string",
+          "enum": ["voice", "text"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "dateKey", "transcript", "source", "createdAt"]
+    },
+    "PlannerTaskDoc": {
+      "title": "PlannerTaskDoc",
+      "description": "User-owned one-off task, fixed event, or Google Calendar synced event.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "dateKey": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "startMinutes": {
+          "type": "integer"
+        },
+        "endMinutes": {
+          "type": "integer"
+        },
+        "durationMinutes": {
+          "type": "integer"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["High", "Medium", "Low"]
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Wellness", "Mindfulness", "Movement", "Focus", "General"]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "isEvent": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "string",
+          "enum": ["zest", "google"]
+        },
+        "googleEventId": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "id",
+        "title",
+        "dateKey",
+        "startMinutes",
+        "endMinutes",
+        "durationMinutes",
+        "priority",
+        "category",
+        "notes",
+        "completed",
+        "isEvent",
+        "source",
+        "googleEventId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TimeBlockDoc": {
+      "title": "TimeBlockDoc",
+      "description": "Scheduled hourly/quarter-hour block on a user's daily timeline.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "dateKey": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Wellness", "Mindfulness", "Movement", "Focus", "General"]
+        },
+        "startMinutes": {
+          "type": "integer"
+        },
+        "endMinutes": {
+          "type": "integer"
+        },
+        "habitId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "taskId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "source": {
+          "type": "string",
+          "enum": ["zest", "google"]
+        },
+        "googleEventId": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "id",
+        "dateKey",
+        "title",
+        "category",
+        "startMinutes",
+        "endMinutes",
+        "habitId",
+        "taskId",
+        "source",
+        "googleEventId",
+        "updatedAt"
+      ]
+    },
+    "CalendarSyncDoc": {
+      "title": "CalendarSyncDoc",
+      "description": "User's Google Calendar synchronization metadata.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "connected": {
+          "type": "boolean"
+        },
+        "lastSyncedAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "syncedCount": {
+          "type": "integer"
+        },
+        "calendarEmail": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "connected",
+        "lastSyncedAt",
+        "syncedCount",
+        "calendarEmail",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Owner-only user profile document containing PII and auth identity."
+    },
+    "/users/{userId}/habits/{habitId}": {
+      "schema": { "$ref": "#/entities/HabitDoc" },
+      "description": "User's personal habits and daily rituals."
+    },
+    "/users/{userId}/completions/{dateKey}": {
+      "schema": { "$ref": "#/entities/CompletionDayDoc" },
+      "description": "Completed habit IDs keyed by YYYY-MM-DD."
+    },
+    "/users/{userId}/journalEntries/{entryId}": {
+      "schema": { "$ref": "#/entities/JournalEntryDoc" },
+      "description": "Voice or written wellness reflection entries."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/PlannerTaskDoc" },
+      "description": "User-owned one-off planner tasks, events, and Google Calendar entries."
+    },
+    "/users/{userId}/timeBlocks/{blockId}": {
+      "schema": { "$ref": "#/entities/TimeBlockDoc" },
+      "description": "User-owned time blocks scheduled on the daily planner timeline."
+    },
+    "/users/{userId}/syncState/{syncId}": {
+      "schema": { "$ref": "#/entities/CalendarSyncDoc" },
+      "description": "Google Calendar sync connection status and timestamp."
+    }
+  }
+}
