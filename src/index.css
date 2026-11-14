@@ -1,0 +1,226 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  :root {
+    --zest-bg: #f2f9ed;
+    --zest-surface: #fdfffb;
+    --zest-surface-2: #e7f2df;
+    --zest-ink: #1a260e;
+    --zest-ink-2: #586251;
+    --zest-line: #d8e0d1;
+    --zest-primary: #4b7c00;
+    --zest-primary-bright: #538900;
+    --zest-primary-edge: #3c6300;
+    --zest-primary-soft: #d7f3c2;
+    --zest-primary-soft-edge: #b8e09b;
+    --zest-secondary: #395ca7;
+    --zest-secondary-soft: #d9e2ff;
+    --zest-secondary-accent: #8daeff;
+    --zest-tertiary: #995f00;
+    --zest-tertiary-bright: #cc8400;
+    --zest-dark-card: #1c3400;
+  }
+
+  html {
+    background-color: var(--zest-bg);
+    color: var(--zest-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--zest-bg);
+    color: var(--zest-ink);
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.zest-card {
+  background-color: #fdfffb;
+  border: 2px solid rgba(216, 224, 209, 0.7);
+  box-shadow: 0px 4px 12px rgba(26, 38, 14, 0.04);
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.zest-card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0px 6px 16px rgba(26, 38, 14, 0.07);
+}
+
+.zest-card-elevated {
+  background-color: #fdfffb;
+  border: 2px solid #d8e0d1;
+  box-shadow: 0px 8px 24px rgba(26, 38, 14, 0.08);
+}
+
+.zest-btn-primary {
+  background-color: #4b7c00;
+  color: #ffffff;
+  box-shadow: 0px 4px 0px #3c6300;
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 150ms ease;
+}
+
+.zest-btn-primary:hover:not(:disabled) {
+  background-color: #538900;
+}
+
+.zest-btn-primary:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0px 2px 0px #3c6300;
+}
+
+.zest-btn-secondary {
+  background-color: #d7f3c2;
+  color: #1a260e;
+  box-shadow: 0px 3px 0px #b8e09b;
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 150ms ease;
+}
+
+.zest-btn-secondary:hover:not(:disabled) {
+  background-color: #ccebb5;
+}
+
+.zest-btn-secondary:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0px 1px 0px #b8e09b;
+}
+
+.zest-input {
+  background-color: #e7f2df;
+  color: #1a260e;
+  caret-color: #4b7c00;
+  transition: box-shadow 150ms ease, outline-color 150ms ease;
+}
+
+.zest-input::placeholder {
+  color: #586251;
+}
+
+.zest-input:focus {
+  outline: 2px solid #538900;
+  box-shadow: 0 0 0 4px #d7f3c2;
+}
+
+.zest-check-target {
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.zest-check-target:active {
+  transform: scale(0.92);
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0.85);
+  }
+  55% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes zestSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes zestModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes zestMediaFade {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-check-pop {
+  animation: checkPop 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.zest-view-enter {
+  animation: zestSlideIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zest-modal-in {
+  animation: zestModalIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zest-media-fade {
+  animation: zestMediaFade 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Responsive canvas & element scaling via CSS media queries */
+.zest-container {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+@media (max-width: 360px) {
+  .zest-container {
+    padding-inline: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .zest-container {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-check-pop,
+  .zest-view-enter,
+  .zest-modal-in,
+  .zest-media-fade,
+  .zest-card,
+  .zest-card-hover:hover,
+  .zest-check-target,
+  .zest-btn-primary,
+  .zest-btn-secondary {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
